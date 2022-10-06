@@ -5,6 +5,7 @@ Prerequisites for building and deploying Flask
 Python 3 and Flask
 
 
+Assignment 1:
 Building and deploying the flask app
 
 flask run -p 3000
@@ -19,3 +20,6 @@ To demo:
 mkdir newfolder
 cd newfolder
 git clone git@github.com:lareb-neu/webapp.git
+
+
+Assignment 2: 
