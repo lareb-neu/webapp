@@ -102,13 +102,12 @@ class GetandPut(Resource):
         if data_update is None:
             return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
         
-        if len(data_update)<4:
+        if len(data_update)<3:
             return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
 
-        
         if "username" in data_update.keys():
-            return "Record can not be updated" , status.HTTP_403_FORBIDDEN
-
+            return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
+        
 
         else:
             first_name = request.json['first_name']
