@@ -23,3 +23,30 @@ git clone git@github.com:lareb-neu/webapp.git
 
 
 Assignment 2: 
+
+To demo: 
+mkdir newfolder
+cd newfolder
+git clone git@github.com:lareb-neu/webapp.git
+
+to run flask run -p 2000
+
+
+The installation done:
+pip3 install Flask Flask-SQLAlchemy
+pip3 install Flask psycopg2-binary
+Pip3 install marshmallow-sqlalchemy
+Pip3 install flask-marshmallow
+pip3 install flask-bcrypt
+Pip3 install bcrypt
+pip3 install Flask-HTTPAuth
+
+python3
+from app import db
+ db.create_all()
+
+
+New terminal
+
+flask shell
+ from app import db
