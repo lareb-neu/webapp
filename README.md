@@ -47,6 +47,6 @@ from app import db
 
 
 New terminal
-
+Command line
 flask shell
  from app import db
