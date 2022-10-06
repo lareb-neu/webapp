@@ -1,15 +1,10 @@
 name: Test with pytest
-
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  build:
+  test_in_pull:
 
     runs-on: ubuntu-latest
 

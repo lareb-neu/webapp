@@ -99,17 +99,13 @@ class GetandPut(Resource):
     
         student_update = New_Student.query.get_or_404(id)
         data_update = request.get_json()
-        if data_update is None:
-            return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
-        
-        if len(data_update)<3:
-            return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
+        required_keys=['first_name','last_name','password']
+
 
         if "username" in data_update.keys():
             return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
         
-
-        else:
+        try:
             first_name = request.json['first_name']
             last_name = request.json['last_name']
             password_text=request.json['password']
@@ -127,7 +123,8 @@ class GetandPut(Resource):
             db.session.commit()
             return make_response(student_schema.jsonify(student_update),204)
 
-
+        except:
+            return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
 class Health(Resource):
     def get(self):
         return jsonify(response='200')
