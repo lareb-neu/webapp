@@ -106,22 +106,26 @@ class GetandPut(Resource):
             return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
         
         try:
-            first_name = request.json['first_name']
-            last_name = request.json['last_name']
-            password_text=request.json['password']
+            if(len(data_update)==3):
+                first_name = request.json['first_name']
+                last_name = request.json['last_name']
+                password_text=request.json['password']
     
     
-            password_encoded=password_text.encode('utf-8')
-            password = bcrypt.hashpw(password_encoded,bcrypt.gensalt())
-            password_decoded=password.decode('utf-8')
+                password_encoded=password_text.encode('utf-8')
+                password = bcrypt.hashpw(password_encoded,bcrypt.gensalt())
+                password_decoded=password.decode('utf-8')
             
     
-            student_update.first_name=first_name
-            student_update.last_name=last_name
-            student_update.password=password_decoded
-            student_update.account_updated = default = datetime.utcnow()
-            db.session.commit()
-            return make_response(student_schema.jsonify(student_update),204)
+                student_update.first_name=first_name
+                student_update.last_name=last_name
+                student_update.password=password_decoded
+                student_update.account_updated = default = datetime.utcnow()
+                db.session.commit()
+                return make_response(student_schema.jsonify(student_update),204)
+            else:
+                return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
+
 
         except:
             return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
