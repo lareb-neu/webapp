@@ -50,3 +50,5 @@ New terminal
 command line written down
 flask shell
  from app import db
+
+Everything up to date
