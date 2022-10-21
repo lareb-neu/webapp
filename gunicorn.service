@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn Service
+After=network.target
+
+[Service]
+User=ubuntu
+Group-www-data
+WorkingDirectory=/home/ubuntu/webapp_local
+ExecStart=/usr/bin/gunicorn3 -b localhost:8000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
