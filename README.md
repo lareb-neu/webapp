@@ -51,4 +51,6 @@ command line written down
 flask shell
  from app import db
 
-Everything up to date
+---------------
+
+Run github actions  through merge and then everything will work and then enter command for cloud formation
