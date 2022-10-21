@@ -1,0 +1,31 @@
+name: ami upload after merge
+on:
+  push:
+    branches:
+    - main
+jobs:
+  packer_build:
+
+    runs-on: ubuntu-latest
+    env:
+        AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
+        AWS_SECRET_KEY: ${{secrets.AWS_SECRET_KEY}}
+      
+    steps:
+    - uses: actions/checkout@v3
+    - name: Python dependencies installed
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.9
+
+    - name: Checking the validation through template
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: validate
+        arguments: -syntax-only
+        target: ami.pkr.hcl
+    
+
+    - name: Creating and building the template through github
+      working-directory: ${{github.workspace}}
+      run: zip webapp_local.zip ./* && packer build ami.pkr.hcl

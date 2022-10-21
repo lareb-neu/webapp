@@ -7,5 +7,5 @@ flask-marshmallow
 Flask-HTTPAuth
 flask-sqlalchemy
 psycopg2-binary
-flask_ap
+flask_api
 
