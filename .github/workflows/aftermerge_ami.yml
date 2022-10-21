@@ -1,11 +1,12 @@
 name: ami upload after merge
+#workflow will run after the pull request is merged
 on:
   push:
     branches:
     - main
 jobs:
   packer_build:
-
+#this ami packer file will run on ubuntu latest and will create the AMI
     runs-on: ubuntu-latest
     env:
         AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
@@ -17,7 +18,7 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: 3.9
-
+#the workflow will validate and build the ami through the below code
     - name: Checking the validation through template
       uses: hashicorp/packer-github-actions@master
       with:
