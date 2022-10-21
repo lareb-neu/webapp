@@ -54,3 +54,5 @@ flask shell
 ---------------
 
 Run github actions  through merge and then everything will work and then enter command for cloud formation
+
+Instance will be created and then runn all apis.
