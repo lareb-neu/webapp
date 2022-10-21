@@ -24,6 +24,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
+
+
 auth = HTTPBasicAuth()
 ma = Marshmallow(app)
 api = Api(app)
@@ -38,6 +40,9 @@ class New_Student(db.Model):
     
     def __repr__(self):
         return self.id
+with app.app_context():
+    db.create_all()
+    db.session.commit()
 
 
 
@@ -139,4 +144,5 @@ api.add_resource(Health, '/healthz')
 api.add_resource(GetAll, '/')
         
 if __name__ == "__main__":
-    app.run(port = 2000, debug = True)
+    db.create_all()
+    app.run(host = '0.0.0.0', port = 6000, debug = True)
