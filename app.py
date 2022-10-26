@@ -14,6 +14,9 @@ from flask_api import status
 import bcrypt
 from flask import make_response
 from flask_restful import Api, Resource
+import boto3
+from botocore.exceptions import ClientError
+import json
 
 
 app = Flask(__name__)
@@ -37,6 +40,19 @@ class New_Student(db.Model):
     username = db.Column(db.String(20), unique=True, nullable=False)
     account_created = db.Column(db.DateTime, default = datetime.utcnow)
     account_updated = db.Column(db.DateTime, default = datetime.utcnow)
+
+
+class Document(db.Model):
+    doc_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = db.Column(db.String(100), nullable=False)
+    metadata_db = db.Column(db.String(900))
+    #last_name = db.Column(db.String(100), nullable=False)
+    #password = db.Column(db.String(100), nullable=False)
+    #username = db.Column(db.String(20), unique=True, nullable=False)
+    date_created = db.Column(db.DateTime, default = datetime.utcnow)
+    #s3_bucket_path = db.Column(db.String(100), nullable=False)
+    
+
     
     def __repr__(self):
         return self.id
@@ -44,6 +60,12 @@ with app.app_context():
     db.create_all()
     db.session.commit()
 
+class DocumentSchema(ma.Schema):
+    class Meta:
+        fields = ('doc_id', 'name', 'date_created')
+
+document_schema = DocumentSchema(many = False)
+documents_schema = DocumentSchema(many = True)
 
 
 # create student schema
@@ -82,6 +104,7 @@ class CreateUser(Resource):
 @auth.verify_password
 def verify_password(username, password):
     user = New_Student.query.filter_by(username=username).first()
+    print("hello")
     
     if(user and  bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))):
             return username
@@ -138,10 +161,76 @@ class Health(Resource):
     def get(self):
         return jsonify(response='200')
 
+
+class UploadDocument(Resource):
+    def post(self):
+        name = request.json['name']
+        document_path = request.json['path']
+        #username = request.json['username']
+        #password_text=request.json['password']
+  
+    
+      #  students = Document.query.all()
+       # for user in students:
+        #    if(user.username==username):
+         #       return "Record already exists" , status.HTTP_400_BAD_REQUEST
+
+
+        client = boto3.client("s3")
+        client.upload_file(document_path, "csye6225larebkhans3-dev", name)
+        headObject = client.head_object(Bucket="csye6225larebkhans3-dev", Key=name)
+        x= json.dumps(headObject,indent=4,sort_keys=True, default=str)
+        print(x)
+
+        
+        #return "hello"
+        #return "uploaded"
+        new_document = Document(name=name)
+        new_document.metadata_db = x.ResponseMetadata
+        db.session.add(new_document)
+        db.session.commit()
+        return make_response(document_schema.jsonify(new_document),201)
+        
+class GetDocument(Resource):
+    
+    def get(self,doc_id):
+        #document = Document.query.get_or_404(doc_id)
+        #return document_schema.jsonify(document)
+        client = boto3.client("s3")
+        x=client.head_object(Bucket="csye6225larebkhans3-dev", Key="lareb1")
+       
+        print(x)
+
+class GetAllDocument(Resource):
+    
+    def get(self,doc_id):
+        #document = Document.query.get_or_404(doc_id)
+        #return document_schema.jsonify(document)
+        client = boto3.client("s3")
+        x=client.head_object(Bucket="csye6225larebkhans3-dev", Key="lareb1")
+       
+        print(x)
+
+class DeleteDocument(Resource):
+    def delete(self,doc_id):
+        document_delete = Document.query.get_or_404(doc_id)
+        name=document_delete.name
+
+        client = boto3.client("s3")
+        client.delete_object(Bucket='csye6225larebkhans3-dev', Key=name)
+        db.session.delete(document_delete)
+        db.session.commit()
+        return "Done"
+
+
 api.add_resource(CreateUser, '/v1/account/')
 api.add_resource(GetandPut, '/v1/account/<string:id>')   
 api.add_resource(Health, '/healthz')
 api.add_resource(GetAll, '/')
+api.add_resource(UploadDocument, '/v1/document')
+api.add_resource(GetAllDocument, '/v1/document')
+api.add_resource(GetDocument, '/v1/document/<string:doc_id>')
+api.add_resource(DeleteDocument, '/v1/document/<string:doc_id>')
         
 if __name__ == "__main__":
     db.create_all()
