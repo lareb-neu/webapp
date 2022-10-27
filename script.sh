@@ -16,8 +16,8 @@ sudo apt-get install nginx -y
 #sudo apt install gunicorn3 -y
 #sudo apt-get install nginx -y
 
-echo "Installing postgresql server"
-sudo apt-get install postgresql postgresql-contrib -y
+#echo "Installing postgresql server"
+#sudo apt-get install postgresql postgresql-contrib -y
 
 #unzipping the file and copying it's contents to ubuntu machine
 #sudo apt-get install zip unzip
@@ -34,39 +34,40 @@ sudo pip3 install SQLAlchemy
 sudo pip3 install flask-marshmallow
 sudo pip3 install Flask-HTTPAuth
 sudo pip3 install flask-sqlalchemy
+sudo pip3 install boto3
 
 #installing posgtrssql and creating database
 
 
-echo "creating data base"
-sudo -iu postgres psql <<EOF
+#echo "creating data base"
+#sudo -iu postgres psql <<EOF
 
-CREATE DATABASE db_final;
+#CREATE DATABASE db_final;
 
-CREATE USER lareb3 WITH PASSWORD 'jonas';
+#CREATE USER lareb3 WITH PASSWORD 'jonas';
 
-GRANT ALL PRIVILEGES ON DATABASE db_final TO lareb3;
-EOF
+#GRANT ALL PRIVILEGES ON DATABASE db_final TO lareb3;
+#EOF
 
-echo "Starting postgresql server"
+#echo "Starting postgresql server"
 
 
 #copying the files for nginx and gunicorn service 
-sudo cp /tmp/gunicorn.service /etc/systemd/system/gunicorn.service
-sudo cp /tmp/network_file /etc/nginx/sites-available/default
+sudo cp /home/ubuntu/webapp_local/gunicorn.service /etc/systemd/system/gunicorn.service
+sudo cp /home/ubuntu/webapp_local/network_file /etc/nginx/sites-available/default
 
 #satrting the services
 
-sudo service postgresql start
+#sudo service postgresql start
 
-echo "Starting gunicorn server"
-sudo systemctl daemon-reload
-sudo systemctl start gunicorn
-sudo systemctl enable gunicorn
+#echo "Starting gunicorn server"
+#sudo systemctl daemon-reload
+#sudo systemctl start gunicorn
+#sudo systemctl enable gunicorn
 
-echo "Starting nginx server"
-sudo systemctl start nginx
-sudo systemctl enable nginx
-echo "Script executed successfully"
+#echo "Starting nginx server"
+#sudo systemctl start nginx
+#sudo systemctl enable nginx
+#echo "Script executed successfully"
 
 

@@ -1,0 +1,27 @@
+name: validating packer
+#workflow will run after the pull request is merged
+on:
+  pull_request:
+    branches:
+    - main
+jobs:
+  packer_build:
+#this ami packer file will run on ubuntu latest and will create the AMI
+    runs-on: ubuntu-latest
+    env:
+        AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
+        AWS_SECRET_KEY: ${{secrets.AWS_SECRET_KEY}}
+      
+    steps:
+    - uses: actions/checkout@v3
+    - name: Python dependencies installed
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.9
+#the workflow will validate and build the ami through the below code
+    - name: Checking the validation through template
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: validate
+        arguments: -syntax-only
+        target: ami.pkr.hcl
