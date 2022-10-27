@@ -36,9 +36,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-
-
-
 auth = HTTPBasicAuth()
 ma = Marshmallow(app)
 api = Api(app)
