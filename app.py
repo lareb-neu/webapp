@@ -222,7 +222,6 @@ class DeleteDocument(Resource):
         db.session.commit()
         return "Done"
 
-
 api.add_resource(CreateUser, '/v1/account/')
 api.add_resource(GetandPut, '/v1/account/<string:id>')   
 api.add_resource(Health, '/healthz')
