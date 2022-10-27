@@ -19,7 +19,10 @@ variable "aws_region" {
 }
 
 
-
+variable "ami_user"{
+  type    = string
+  default = "620068443483"
+}
 # https://www.packer.io/plugins/builders/amazon/ebs
 source "amazon-ebs" "my-ami" {
   region     = "${var.aws_region}"
@@ -28,9 +31,8 @@ source "amazon-ebs" "my-ami" {
   ami_regions = [
     "us-east-1",
   ]
-  ami_users = [
-    "620068443483",
-  ]
+  ami_users= ["${var.ami_user}"]
+
   aws_polling {
     delay_seconds = 30
     max_attempts  = 50
