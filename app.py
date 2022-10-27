@@ -198,13 +198,10 @@ class UploadDocument(Resource):
         client = boto3.client("s3")
         try:
             print("I ma here")
-            client.upload_file(document_path, "csye6225larebkhans3-dev", name)
-            
-            
-            s3_path = "s3://csye6225larebkhans3-dev/"+name
-            
-
-            
+            s3_bucket_name=db_creds.s3bucketname
+            s3_path="s3://"+db_creds.s3bucketname+"/"
+            client.upload_file(document_path, s3_bucket_name, name)
+           # client.upload_file(document_path, "csye6225larebkhans3-dev", name)
             
             new_document = Document(name=name, user_id=user_id_variable, s3_bucket_path=s3_path)
             #new_document.metadata_db = x.ResponseMetadata
@@ -262,9 +259,10 @@ class GetDocument(Resource):
                 return "Bad request" , 404
         
             name=doc_details.name
-            
+            s3_bucket_name=db_creds.s3bucketname
+            s3_path="s3://"+db_creds.s3bucketname+"/"
             client = boto3.client("s3")
-            client.delete_object(Bucket='csye6225larebkhans3-dev', Key=name)
+            client.delete_object(Bucket=s3_bucket_name, Key=name)
             db.session.delete(doc_details)
             db.session.commit()
             return "Done"
