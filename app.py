@@ -272,7 +272,6 @@ class GetDocument(Resource):
         except:
             return "Not found" , 404
 
-
 # class GetAllDocument(Resource):
 #     @auth.login_required
 #     def get(self):

@@ -13,7 +13,6 @@ variable "subnet_id" {
   default = "subnet-07821efa79f9f961e"
 }
 
-
 variable "aws_region" {
   type    = string
   default = "us-east-1"
@@ -50,7 +49,6 @@ source "amazon-ebs" "my-ami" {
     volume_type           = "gp2"
   }
 }
-
 
 build {
   sources = ["source.amazon-ebs.my-ami"]
