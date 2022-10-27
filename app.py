@@ -54,7 +54,6 @@ class New_Student(db.Model):
     def get_userinfo(self):
         return {feature.name: getattr(self, feature.name) for feature in self.__table__.columns}
 
-
 class Document(db.Model):
     doc_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(100), nullable=False)
