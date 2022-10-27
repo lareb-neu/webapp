@@ -62,8 +62,8 @@ build {
     destination ="/tmp/network_file"
    }
   provisioner "file" {
-    source      = "webapp_local.zip"
-    destination = "/home/ubuntu/webapp_local.zip"
+    source      = "webapp.zip"
+    destination = "/home/ubuntu/webapp.zip"
   }
   
   provisioner "shell" {

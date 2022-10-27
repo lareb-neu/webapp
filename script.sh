@@ -21,9 +21,9 @@ sudo apt-get install nginx -y
 
 #unzipping the file and copying it's contents to ubuntu machine
 #sudo apt-get install zip unzip
-cd ~/ && unzip webapp_local.zip
+cd ~/ && unzip webapp.zip
 #installing required libraries
-cd /home/ubuntu/webapp_local
+cd /home/ubuntu/
 sudo pip3 install flask
 sudo pip3 install flask_restful
 sudo pip3 install bcrypt
@@ -53,8 +53,8 @@ sudo pip3 install boto3
 
 
 #copying the files for nginx and gunicorn service 
-sudo cp /home/ubuntu/webapp_local/gunicorn.service /etc/systemd/system/gunicorn.service
-sudo cp /home/ubuntu/webapp_local/network_file /etc/nginx/sites-available/default
+sudo cp /home/ubuntu/gunicorn.service /etc/systemd/system/gunicorn.service
+sudo cp /home/ubuntu/network_file /etc/nginx/sites-available/default
 
 #satrting the services
 
