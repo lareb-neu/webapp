@@ -246,8 +246,6 @@ class GetDocument(Resource):
        
        
 
-
-
 ## delete 
     @auth.login_required
     def delete(self,doc_id):
@@ -264,7 +262,7 @@ class GetDocument(Resource):
             client.delete_object(Bucket=s3_bucket_name, Key=name)
             db.session.delete(doc_details)
             db.session.commit()
-            return "Done"
+            return "Done" , 204
             
         except:
             return "Not found" , 404
