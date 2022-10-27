@@ -17,15 +17,15 @@ from flask_restful import Api, Resource
 import boto3
 from botocore.exceptions import ClientError
 import json
-#import db_creds
+import db_creds
 
 ####
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://lareb3:jonas@localhost/db_final"
-#url="postgresql://"+db_creds.username+":"+db_creds.password+"@"+db_creds.host+":"+db_creds.port+"/"+db_creds.db_name
-#app.config['SQLALCHEMY_DATABASE_URI'] =url
+#app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://lareb3:jonas@localhost/db_final"
+url="postgresql://"+db_creds.username+":"+db_creds.password+"@"+db_creds.host+":"+db_creds.port+"/"+db_creds.db_name
+app.config['SQLALCHEMY_DATABASE_URI'] =url
 
 ###
 
