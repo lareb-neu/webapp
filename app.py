@@ -17,10 +17,20 @@ from flask_restful import Api, Resource
 import boto3
 from botocore.exceptions import ClientError
 import json
+#import db_creds
+
+####
 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://lareb3:jonas@localhost/db_final"
+#url="postgresql://"+db_creds.username+":"+db_creds.password+"@"+db_creds.host+":"+db_creds.port+"/"+db_creds.db_name
+#app.config['SQLALCHEMY_DATABASE_URI'] =url
+
+###
+
+#app = Flask(__name__)
+#app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://"+db_creds.username+":"+db_creds.password+"@"+db_creds.host+":"db_creds.port+"/"+db_creds.db_name
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -41,16 +51,19 @@ class New_Student(db.Model):
     account_created = db.Column(db.DateTime, default = datetime.utcnow)
     account_updated = db.Column(db.DateTime, default = datetime.utcnow)
 
+    def get_userinfo(self):
+        return {feature.name: getattr(self, feature.name) for feature in self.__table__.columns}
+
 
 class Document(db.Model):
     doc_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(100), nullable=False)
-    metadata_db = db.Column(db.String(900))
+    user_id = db.Column(UUID(as_uuid=True), default=uuid.uuid4)
     #last_name = db.Column(db.String(100), nullable=False)
     #password = db.Column(db.String(100), nullable=False)
     #username = db.Column(db.String(20), unique=True, nullable=False)
     date_created = db.Column(db.DateTime, default = datetime.utcnow)
-    #s3_bucket_path = db.Column(db.String(100), nullable=False)
+    s3_bucket_path = db.Column(db.String(100), nullable=False)
     
 
     
@@ -62,7 +75,7 @@ with app.app_context():
 
 class DocumentSchema(ma.Schema):
     class Meta:
-        fields = ('doc_id', 'name', 'date_created')
+        fields = ('doc_id', 'name', 'user_id' , 'date_created', 's3_bucket_path')
 
 document_schema = DocumentSchema(many = False)
 documents_schema = DocumentSchema(many = True)
@@ -79,35 +92,38 @@ students_schema = StudentSchema(many = True)
 
 class CreateUser(Resource):
     def post(self):
-        first_name = request.json['first_name']
-        last_name = request.json['last_name']
-        username = request.json['username']
-        password_text=request.json['password']
-    
-    
-        password_encoded=password_text.encode('utf-8')
-        password = bcrypt.hashpw(password_encoded,bcrypt.gensalt())
-        password_decoded=password.decode('utf-8')
-    
-        students = New_Student.query.all()
-        for user in students:
-            if(user.username==username):
-                return "Record already exists" , status.HTTP_400_BAD_REQUEST
+        try:
+            first_name = request.json['first_name']
+            last_name = request.json['last_name']
+            username = request.json['username']
+            password_text=request.json['password']
+        
+        
+            password_encoded=password_text.encode('utf-8')
+            password = bcrypt.hashpw(password_encoded,bcrypt.gensalt())
+            password_decoded=password.decode('utf-8')
+        
+            students = New_Student.query.all()
+            for user in students:
+                if(user.username==username):
+                    return "Record already exists" , status.HTTP_400_BAD_REQUEST
 
-        new_student = New_Student(first_name = first_name, last_name = last_name, username = username, password=password_decoded)
+            new_student = New_Student(first_name = first_name, last_name = last_name, username = username, password=password_decoded)
 
-        db.session.add(new_student)
-        db.session.commit()
-        return make_response(student_schema.jsonify(new_student),201)
+            db.session.add(new_student)
+            db.session.commit()
+            return make_response(student_schema.jsonify(new_student),201)
+        except:
+            return "Bad request" , status.HTTP_400_BAD_REQUEST
         
 
 @auth.verify_password
 def verify_password(username, password):
     user = New_Student.query.filter_by(username=username).first()
-    print("hello")
+    
     
     if(user and  bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))):
-            return username
+            return user.get_userinfo()
 class GetAll(Resource):
     def get(self):
         new_students=New_Student.query.all()
@@ -119,8 +135,12 @@ class GetAll(Resource):
 class GetandPut(Resource):
     @auth.login_required
     def get(self,id):
-        new_student = New_Student.query.get_or_404(id)
-        return student_schema.jsonify(new_student)
+        if(str(auth.current_user()['id'])!=id):
+
+            return {"message":"Not authorized"} , 403
+        else:
+            new_student = New_Student.query.get_or_404(id)
+            return student_schema.jsonify(new_student)
 
     @auth.login_required
     def put(self,id):
@@ -156,80 +176,147 @@ class GetandPut(Resource):
 
 
         except:
-            return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
+            return "Bad request" , status.HTTP_400_BAD_REQUEST
 class Health(Resource):
     def get(self):
         return jsonify(response='200')
 
 
 class UploadDocument(Resource):
+    @auth.login_required
     def post(self):
+        #if(str(auth.current_user()['id'])):
+        user_id_variable=auth.current_user()['id']
+            
+        
+
         name = request.json['name']
         document_path = request.json['path']
-        #username = request.json['username']
-        #password_text=request.json['password']
-  
-    
-      #  students = Document.query.all()
-       # for user in students:
-        #    if(user.username==username):
-         #       return "Record already exists" , status.HTTP_400_BAD_REQUEST
+
 
 
         client = boto3.client("s3")
-        client.upload_file(document_path, "csye6225larebkhans3-dev", name)
-        headObject = client.head_object(Bucket="csye6225larebkhans3-dev", Key=name)
-        x= json.dumps(headObject,indent=4,sort_keys=True, default=str)
-        print(x)
+        try:
+            print("I ma here")
+            client.upload_file(document_path, "csye6225larebkhans3-dev", name)
+            
+            
+            s3_path = "s3://csye6225larebkhans3-dev/"+name
+            
 
+            
+            
+            new_document = Document(name=name, user_id=user_id_variable, s3_bucket_path=s3_path)
+            #new_document.metadata_db = x.ResponseMetadata
+            db.session.add(new_document)
+            db.session.commit()
+            return make_response(document_schema.jsonify(new_document),201)
         
-        #return "hello"
-        #return "uploaded"
-        new_document = Document(name=name)
-        new_document.metadata_db = x.ResponseMetadata
-        db.session.add(new_document)
-        db.session.commit()
-        return make_response(document_schema.jsonify(new_document),201)
+        except:
+            print(ClientError)
+            return "Bad request" , status.HTTP_400_BAD_REQUEST
+
+    
+    @auth.login_required
+    def get(self):
+
+        #document = Document.query.get_or_404(doc_id)
+        #return document_schema.jsonify(document)
+        #client = boto3.client("s3")
+        #x=client.head_object(Bucket="csye6225larebkhans3-dev", Key="lareb1")
+       
+        #print(x)
+        print('do')
+        new_docs=(Document.query.filter_by(user_id=str(auth.current_user()['id'])))
+        print('do',new_docs)
+        result_set = documents_schema.dump(new_docs)
+        return result_set
         
 class GetDocument(Resource):
-    
-    def get(self,doc_id):
-        #document = Document.query.get_or_404(doc_id)
-        #return document_schema.jsonify(document)
-        client = boto3.client("s3")
-        x=client.head_object(Bucket="csye6225larebkhans3-dev", Key="lareb1")
-       
-        print(x)
 
-class GetAllDocument(Resource):
-    
+    @auth.login_required
     def get(self,doc_id):
-        #document = Document.query.get_or_404(doc_id)
-        #return document_schema.jsonify(document)
-        client = boto3.client("s3")
-        x=client.head_object(Bucket="csye6225larebkhans3-dev", Key="lareb1")
-       
-        print(x)
+        doc_details=Document.query.get(doc_id)
+        if(doc_details and str(doc_details.user_id)!=str(auth.current_user()['id'])):
+            
+            return "Bad request" , 403
+        try:
+            
+            return document_schema.jsonify(doc_details)
 
-class DeleteDocument(Resource):
+        except:
+            return "Bad request" , 403
+        
+       
+       
+
+
+
+## delete 
+    @auth.login_required
     def delete(self,doc_id):
-        document_delete = Document.query.get_or_404(doc_id)
-        name=document_delete.name
+        try:
+            doc_details=Document.query.get(doc_id)
+            if(doc_details and str(doc_details.user_id)!=str(auth.current_user()['id'])):
+            
+                return "Bad request" , 404
+        
+            name=doc_details.name
+            
+            client = boto3.client("s3")
+            client.delete_object(Bucket='csye6225larebkhans3-dev', Key=name)
+            db.session.delete(doc_details)
+            db.session.commit()
+            return "Done"
+            
+        except:
+            return "Not found" , 404
 
-        client = boto3.client("s3")
-        client.delete_object(Bucket='csye6225larebkhans3-dev', Key=name)
-        db.session.delete(document_delete)
-        db.session.commit()
-        return "Done"
+
+# class GetAllDocument(Resource):
+#     @auth.login_required
+#     def get(self):
+
+#         #document = Document.query.get_or_404(doc_id)
+#         #return document_schema.jsonify(document)
+#         #client = boto3.client("s3")
+#         #x=client.head_object(Bucket="csye6225larebkhans3-dev", Key="lareb1")
+       
+#         #print(x)
+#         print('do')
+#         new_docs=(Document.query.filter_by(user_id=str(auth.current_user()['id'])))
+#         print('do',new_docs)
+#         result_set = documents_schema.dump(new_docs)
+#         return result_set
+
+class GetAllDocs(Resource):
+    
+    def get(self):
+        new_docs=Document.query.all()
+        result_set = documents_schema.dump(new_docs)
+        return jsonify(result_set)
+
+# class DeleteDocument(Resource):
+#     @auth.login_required
+#     def delete(self,doc_id):
+#         document_delete = Document.query.get_or_404(doc_id)
+#         name=document_delete.name
+
+#         client = boto3.client("s3")
+#         client.delete_object(Bucket='csye6225larebkhans3-dev', Key=name)
+#         db.session.delete(document_delete)
+#         db.session.commit()
+#         return "Done"
+
 
 api.add_resource(CreateUser, '/v1/account/')
 api.add_resource(GetandPut, '/v1/account/<string:id>')   
 api.add_resource(Health, '/healthz')
 api.add_resource(GetAll, '/')
-api.add_resource(UploadDocument, '/v1/document')
-api.add_resource(GetAllDocument, '/v1/document')
-api.add_resource(GetDocument, '/v1/document/<string:doc_id>')
-api.add_resource(DeleteDocument, '/v1/document/<string:doc_id>')
+api.add_resource(UploadDocument, '/v1/documents')
+api.add_resource(GetAllDocs, '/v1/alldocuments')
+api.add_resource(GetDocument, '/v1/documents/<string:doc_id>')
+#api.add_resource(DeleteDocument, '/v1/documents/<string:doc_id>')
         
 if __name__ == "__main__":
     db.create_all()
