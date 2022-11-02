@@ -27,7 +27,7 @@ app = Flask(__name__)
 url="postgresql://"+db_creds.username+":"+db_creds.password+"@"+db_creds.host+":"+db_creds.port+"/"+db_creds.db_name
 app.config['SQLALCHEMY_DATABASE_URI'] =url
 
-###
+####
 
 #app = Flask(__name__)
 #app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://"+db_creds.username+":"+db_creds.password+"@"+db_creds.host+":"db_creds.port+"/"+db_creds.db_name
