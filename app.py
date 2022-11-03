@@ -18,6 +18,9 @@ import boto3
 from botocore.exceptions import ClientError
 import json
 import db_creds
+from werkzeug.utils import secure_filename
+
+
 
 ####
 
@@ -194,33 +197,47 @@ class DocTest(Resource):
 class UploadDocument(Resource):
     @auth.login_required
     def post(self):
-        #if(str(auth.current_user()['id'])):
-        user_id_variable=auth.current_user()['id']
-            
-        
-
-        name = request.json['name']
-        document_path = request.json['path']
-
-
-
-        client = boto3.client("s3")
         try:
-            print("I ma here")
             s3_bucket_name=db_creds.s3bucketname
             s3_path="s3://"+db_creds.s3bucketname+"/"
-            client.upload_file(document_path, s3_bucket_name, name)
-           #client.upload_file(document_path, "csye6225larebkhans3-dev", name)
+
+            file_uploaded=request.files['file']
+            obj=secure_filename(file_uploaded.filename)
             
-            new_document = Document(name=name, user_id=user_id_variable, s3_bucket_path=s3_path)
-            #new_document.metadata_db = x.ResponseMetadata
+            client = boto3.client("s3")
+            user_id_variable=auth.current_user()['id']
+            client.upload_fileobj(file_uploaded, s3_bucket_name,obj,ExtraArgs={"ACL":"public-read"})
+            s3_path_file=s3_path+obj
+            new_document = Document(name=obj,userId=user_id_variable,s3_bucket_path=s3_path_file)
             db.session.add(new_document)
             db.session.commit()
             return make_response(document_schema.jsonify(new_document),201)
-        
+
         except:
             print(ClientError)
             return "Bad request" , status.HTTP_400_BAD_REQUEST
+        #name = request.json['name']
+        #document_path = request.json['path']
+
+
+
+        #client = boto3.client("s3")
+        # try:
+        #     print("I ma here")
+        #     s3_bucket_name=db_creds.s3bucketname
+        #     s3_path="s3://"+db_creds.s3bucketname+"/"
+        #     client.upload_file(document_path, s3_bucket_name, name)
+        #     s3_path_file=s3_path+object_name
+            
+           #client.upload_file(document_path, "csye6225larebkhans3-dev", name)
+            
+            #new_document = Document(name=name, user_id=user_id_variable, s3_bucket_path=s3_path)
+            #new_document.metadata_db = x.ResponseMetadata
+            #db.session.add(new_document)
+            #db.session.commit()
+            
+        
+        
 
 
     
