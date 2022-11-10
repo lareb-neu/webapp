@@ -19,13 +19,33 @@ from botocore.exceptions import ClientError
 import json
 import db_creds
 from werkzeug.utils import secure_filename
+import logging
+import statsd
 
 
 
-####
+# #### all the logging configs
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="{asctime} {message}",
+    style='{',
+    filename='mylog.log',
+    filemode='w'
+
+)
+#logging.basicConfig(level=logging.INFO)
+logging.warning('hello')
+logging.error('hello')
+logging.critical('hello')
+logging.info('hello')
+
+c = statsd.StatsClient('localhost', 8125)
+
 
 
 app = Flask(__name__)
+
 #app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://lareb3:jonas@localhost/db_final"
 url="postgresql://"+db_creds.username+":"+db_creds.password+"@"+db_creds.host+":"+db_creds.port+"/"+db_creds.db_name
 app.config['SQLALCHEMY_DATABASE_URI'] =url
@@ -181,6 +201,8 @@ class GetandPut(Resource):
             return "Bad request" , status.HTTP_400_BAD_REQUEST
 class Health(Resource):
     def get(self):
+        logging.info('hello')
+        c.incr('endpoint.checkhealthz') 
         return jsonify(response='200')
 
 class DocTest(Resource):
