@@ -26,7 +26,7 @@ sudo apt-get install nginx -y
 sudo yum install amazon-cloudwatch-agent -y 
 cd ~/ && unzip webapp.zip
 #installing required libraries
-cd /home/ubuntu/
+cd /home/ubuntu/webapp
 sudo pip3 install flask
 sudo pip3 install flask_restful
 sudo pip3 install bcrypt
@@ -67,8 +67,8 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
 
 
 #copying the files for nginx and gunicorn service 
-sudo cp /home/ubuntu/gunicorn.service /etc/systemd/system/gunicorn.service
-sudo cp /home/ubuntu/network_file /etc/nginx/sites-available/default
+sudo cp /home/ubuntu/webapp/gunicorn.service /etc/systemd/system/gunicorn.service
+sudo cp /home/ubuntu/webapp/network_file /etc/nginx/sites-available/default
 
 #satrting the services
 
