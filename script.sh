@@ -24,7 +24,14 @@ sudo apt-get install nginx -y
 #installing cloudwatch agent
 
 sudo yum install amazon-cloudwatch-agent -y 
-cd ~/ && unzip webapp.zip
+cd ~/ && unzip webapp.zip -d webapp
+cd /home/ubuntu/webapp && wget https://s3.us-east-1.amazonaws.com/amazoncloudwatch-agent-us-east-1/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+    -a fetch-config \
+    -m ec2 \
+    -c file:/home/ubuntu/webapp/cloudwatch-config.json \
+    -s
 #installing required libraries
 cd /home/ubuntu/webapp
 sudo pip3 install flask
@@ -42,11 +49,11 @@ sudo pip3 install statsd
 
 #configuring cloudwatch agent
 
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
-    -a fetch-config \
-    -m ec2 \
-    -c file:/opt/cloudwatch-config.json \
-    -s
+# sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+#     -a fetch-config \
+#     -m ec2 \
+#     -c file:/opt/cloudwatch-config.json \
+#     -s
 
 #installing posgtrssql and creating database
 
