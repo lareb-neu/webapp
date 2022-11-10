@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=ubuntu
 Group-www-data
-WorkingDirectory=/home/ubuntu/
+WorkingDirectory=/home/ubuntu/webapp
 ExecStart=/usr/bin/gunicorn3 -b localhost:8000 app:app
 Restart=always
 
