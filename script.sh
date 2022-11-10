@@ -25,13 +25,17 @@ sudo apt-get install nginx -y
 
 sudo yum install amazon-cloudwatch-agent -y 
 cd ~/ && unzip webapp.zip -d webapp
-cd /home/ubuntu/webapp && wget https://s3.us-east-1.amazonaws.com/amazoncloudwatch-agent-us-east-1/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-
+#cd /home/ubuntu/webapp && 
+sudo curl -o /home/ubuntu/webapp/amazon-cloudwatch-agent.deb https://s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb
+sudo dpkg -i -E /home/ubuntu/webapp/amazon-cloudwatch-agent.deb
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
     -a fetch-config \
     -m ec2 \
     -c file:/home/ubuntu/webapp/cloudwatch-config.json \
     -s
+
+sudo systemctl enable amazon-cloudwatch-agent.service
+sudo service amazon-cloudwatch-agent start
 #installing required libraries
 cd /home/ubuntu/webapp
 sudo pip3 install flask
