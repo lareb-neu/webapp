@@ -35,10 +35,8 @@ logging.basicConfig(
 
 )
 #logging.basicConfig(level=logging.INFO)
-logging.warning('hello')
-logging.error('hello')
-logging.critical('hello')
-logging.info('hello')
+
+logging.info('instance up and running')
 
 c = statsd.StatsClient('localhost', 8125)
 
@@ -114,6 +112,8 @@ students_schema = StudentSchema(many = True)
 
 class CreateUser(Resource):
     def post(self):
+        logging.info('creating user')
+        c.incr('endpoint.createuser')
         try:
             first_name = request.json['first_name']
             last_name = request.json['last_name']
@@ -134,6 +134,7 @@ class CreateUser(Resource):
 
             db.session.add(new_student)
             db.session.commit()
+            
             return make_response(student_schema.jsonify(new_student),201)
         except:
             return "Bad request" , status.HTTP_400_BAD_REQUEST
@@ -148,8 +149,11 @@ def verify_password(username, password):
             return user.get_userinfo()
 class GetAll(Resource):
     def get(self):
+        logging.info('get all users')
+        c.incr('endpoint.getall')
         new_students=New_Student.query.all()
         result_set = students_schema.dump(new_students)
+        
         return jsonify(result_set)
 
 
@@ -157,16 +161,20 @@ class GetAll(Resource):
 class GetandPut(Resource):
     @auth.login_required
     def get(self,id):
+        logging.info('get a specific user')
+        c.incr('endpoint.getspecificuser')
         if(str(auth.current_user()['id'])!=id):
 
             return {"message":"Not authorized"} , 403
         else:
             new_student = New_Student.query.get_or_404(id)
+            
             return student_schema.jsonify(new_student)
 
     @auth.login_required
     def put(self,id):
-    
+        logging.info('updating a specific user information')
+        c.incr('endpoint.updatespecificuser')
         student_update = New_Student.query.get_or_404(id)
         data_update = request.get_json()
         required_keys=['first_name','last_name','password']
@@ -192,6 +200,7 @@ class GetandPut(Resource):
                 student_update.password=password_decoded
                 student_update.account_updated = default = datetime.utcnow()
                 db.session.commit()
+                
                 return make_response(student_schema.jsonify(student_update),204)
             else:
                 return "Record can not be updated" , status.HTTP_400_BAD_REQUEST
@@ -201,17 +210,20 @@ class GetandPut(Resource):
             return "Bad request" , status.HTTP_400_BAD_REQUEST
 class Health(Resource):
     def get(self):
-        logging.info('hello')
+        logging.info('cheching healthz')
         c.incr('endpoint.checkhealthz') 
         return jsonify(response='200')
 
 class DocTest(Resource):
     def post(self):
+        logging.info('uploading document')
+        c.incr('endpoint.uploaddoc')
         name = request.json['name']
         document_path = request.json['path']
         client = boto3.client("s3")
         print("I ma here")
         client.upload_file(document_path, "csye6225larebkhans3-dev", name)
+        
         return "Done"   
   
 
@@ -219,6 +231,8 @@ class DocTest(Resource):
 class UploadDocument(Resource):
     @auth.login_required
     def post(self):
+        logging.info('uploading document')
+        c.incr('endpoint.uploaddocument')
         try:
             s3_bucket_name=db_creds.s3bucketname
             s3_path="s3://"+db_creds.s3bucketname+"/"
@@ -233,6 +247,7 @@ class UploadDocument(Resource):
             new_document = Document(name=obj,user_id=user_id_variable,s3_bucket_path=s3_path_file)
             db.session.add(new_document)
             db.session.commit()
+            
             return make_response(document_schema.jsonify(new_document),201)
 
         except:
@@ -243,7 +258,8 @@ class UploadDocument(Resource):
     
     @auth.login_required
     def get(self):
-
+        logging.info('gettting a document')
+        c.incr('endpoint.getalldocs')
         #document = Document.query.get_or_404(doc_id)
         #return document_schema.jsonify(document)
         #client = boto3.client("s3")
@@ -254,12 +270,15 @@ class UploadDocument(Resource):
         new_docs=(Document.query.filter_by(user_id=str(auth.current_user()['id'])))
         print('do',new_docs)
         result_set = documents_schema.dump(new_docs)
+        
         return result_set
         
 class GetDocument(Resource):
 
     @auth.login_required
     def get(self,doc_id):
+        logging.info('get a specific document')
+        c.incr('endpoint.getdocument')
         doc_details=Document.query.get(doc_id)
         if(doc_details and str(doc_details.user_id)!=str(auth.current_user()['id'])):
             
@@ -277,6 +296,8 @@ class GetDocument(Resource):
 ## delete 
     @auth.login_required
     def delete(self,doc_id):
+        logging.info('delete a specific document')
+        c.incr('endpoint.deletedocument')
         try:
             doc_details=Document.query.get(doc_id)
             if(doc_details and str(doc_details.user_id)!=str(auth.current_user()['id'])):
@@ -290,6 +311,8 @@ class GetDocument(Resource):
             client.delete_object(Bucket=s3_bucket_name, Key=name)
             db.session.delete(doc_details)
             db.session.commit()
+
+            
             return "Done" , 204
             
         except:
@@ -314,8 +337,11 @@ class GetDocument(Resource):
 class GetAllDocs(Resource):
     
     def get(self):
+        logging.info('get all document')
+        c.incr('endpoint.getalldocs')
         new_docs=Document.query.all()
         result_set = documents_schema.dump(new_docs)
+        
         return jsonify(result_set)
 
 # class DeleteDocument(Resource):
