@@ -21,6 +21,9 @@ sudo apt-get install nginx -y
 
 #unzipping the file and copying it's contents to ubuntu machine
 #sudo apt-get install zip unzip
+#installing cloudwatch agent
+
+sudo yum install amazon-cloudwatch-agent -y 
 cd ~/ && unzip webapp.zip
 #installing required libraries
 cd /home/ubuntu/
@@ -35,6 +38,15 @@ sudo pip3 install flask-marshmallow
 sudo pip3 install Flask-HTTPAuth
 sudo pip3 install flask-sqlalchemy
 sudo pip3 install boto3
+sudo pip3 install statsd
+
+#configuring cloudwatch agent
+
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+    -a fetch-config \
+    -m ec2 \
+    -c file:/opt/cloudwatch-config.json \
+    -s
 
 #installing posgtrssql and creating database
 
@@ -50,6 +62,8 @@ sudo pip3 install boto3
 #EOF
 
 #echo "Starting postgresql server"
+
+
 
 
 #copying the files for nginx and gunicorn service 
