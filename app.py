@@ -21,9 +21,9 @@ import db_creds
 from werkzeug.utils import secure_filename
 import logging
 import statsd
+from datetime import datetime
 
-
-
+start = datetime.utcnow()
 # #### all the logging configs
 
 logging.basicConfig(
@@ -212,6 +212,7 @@ class Health(Resource):
     def get(self):
         logging.info('cheching healthz')
         c.incr('endpoint.checkhealthz') 
+        c.timing('healthz timer', datetime.utcnow()-start)
         return jsonify(response='200')
 
 class DocTest(Resource):
