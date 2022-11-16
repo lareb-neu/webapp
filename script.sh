@@ -4,7 +4,6 @@ sleep 20
 sudo apt-get update
 
 sudo apt-get install zip unzip
-
 sudo apt-get install python3 -y
 sudo apt install python3-pip -y
 sudo apt install gunicorn3 -y
