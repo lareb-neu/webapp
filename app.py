@@ -28,12 +28,12 @@ AWS_ACCESS_KEY = awsconfig.AWS_ACCESS_KEY
 AWS_SECRET_KEY = awsconfig.AWS_SECRET_KEY
 AWS_REGION = awsconfig.AWS_REGION
 
-# dynamodb_client = resource(
-#     'dynamodb',
-#     aws_access_key_id=AWS_ACCESS_KEY,
-#     aws_secret_access_key=AWS_SECRET_KEY,
-#     region_name=AWS_REGION
-# )
+dynamodb_client = resource(
+    'dynamodb',
+    aws_access_key_id=AWS_ACCESS_KEY,
+    aws_secret_access_key=AWS_SECRET_KEY,
+    region_name=AWS_REGION
+)
 
 start = datetime.utcnow()
 # #### all the logging configs
@@ -55,9 +55,8 @@ c = statsd.StatsClient('localhost', 8125)
 
 app = Flask(__name__)
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://lareb3:jonas@localhost/db_final"
-url = "postgresql://"+db_creds.username+":"+db_creds.password + \
-    "@"+db_creds.host+":"+db_creds.port+"/"+db_creds.db_name
+#app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://lareb3:jonas@localhost/db_final"
+url = "postgresql://"+db_creds.username+":"+db_creds.password +"@"+db_creds.host+":"+db_creds.port+"/"+db_creds.db_name
 app.config['SQLALCHEMY_DATABASE_URI'] = url
 
 ####
@@ -80,7 +79,7 @@ class New_Student(db.Model):
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    username = db.Column(db.String(20), unique=True, nullable=False)
+    username = db.Column(db.String(50), unique=True, nullable=False)
     account_created = db.Column(db.DateTime, default=datetime.utcnow)
     account_updated = db.Column(db.DateTime, default=datetime.utcnow)
     isVerified = db.Column(db.Boolean, default=False, nullable=False)
@@ -155,26 +154,26 @@ class CreateUser(Resource):
 
             db.session.add(new_student)
             db.session.commit()
-            # tablename = dynamodb_client.Table('csye-6225')
-            # tokenid = str(uuid.uuid4())
-            # tablename.put_item(
-            #     Item={
-            #         'Emailid': username,
-            #         'TokenId': tokenid
-            #     }
-            # )
-            # logging.info('SNS service')
-            # message = {"Username": username,
-            #            "Subject": tokenid,
-            #            }
-            # sns_object = boto3.client('sns', aws_access_key_id=AWS_ACCESS_KEY,
-            #                           aws_secret_access_key=AWS_SECRET_KEY,
-            #                           region_name=AWS_REGION)
-            # response = sns_object.publish(
-            #     TopicArn='arn:aws:sns:us-east-1:377318974645:verify_email',
-            #     Message=json.dumps({'default': json.dumps(message)}),
-            #     MessageStructure='json'
-            # )
+            tablename = dynamodb_client.Table('csye-6225')
+            tokenid = str(uuid.uuid4())
+            tablename.put_item(
+                Item={
+                    'Email': username,
+                    'TokenName': tokenid
+                }
+            )
+            logging.info('SNS service')
+            message = {"Username": username,
+                       "Subject": tokenid,
+                       }
+            sns_object = boto3.client('sns', aws_access_key_id=AWS_ACCESS_KEY,
+                                      aws_secret_access_key=AWS_SECRET_KEY,
+                                      region_name=AWS_REGION)
+            response = sns_object.publish(
+                TopicArn='arn:aws:sns:us-east-1:620068443483:verify_email',
+                Message=json.dumps({'default': json.dumps(message)}),
+                MessageStructure='json'
+            )
 
             return make_response(student_schema.jsonify(new_student), 201)
         except:
@@ -282,8 +281,7 @@ class UploadDocument(Resource):
 
             client = boto3.client("s3")
             user_id_variable = auth.current_user()['id']
-            client.upload_fileobj(file_uploaded, s3_bucket_name, obj, ExtraArgs={
-                                  "ACL": "public-read"})
+            client.upload_fileobj(file_uploaded, s3_bucket_name, obj, ExtraArgs={"ACL": "public-read"})
             s3_path_file = s3_path+obj
             new_document = Document(
                 name=obj, user_id=user_id_variable, s3_bucket_path=s3_path_file)
