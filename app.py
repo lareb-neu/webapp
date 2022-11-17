@@ -407,11 +407,11 @@ class EmailVerification(Resource):
                 response_dynamo = table.query(KeyConditionExpression=Key('Email').eq(email))
                 logging.info(response_dynamo)
                 if (response_dynamo['Count'] == 1):
-                    if (response_dynamo['Items'][0]['TokenId'] == token and response_dynamo['Items'][0]['Email'] == email):
+                    if (response_dynamo['Items'][0]['TokenName'] == token and response_dynamo['Items'][0]['Email'] == email):
                         if (datetime.now() < (datetime.strptime(response_dynamo['Items'][0]['TTL'], "%Y/%m/%d %H:%M:%S"))):
                             result = New_Student.query.filter_by(username=email).first()
-                            if (result.email_verified==False):
-                                result.email_verified = True
+                            if (result.isVerified==False):
+                                result.isVerified = True
                                 db.session.commit()
                                 return {"message": "Verification done."}
                             else:
