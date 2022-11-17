@@ -23,6 +23,7 @@ from werkzeug.utils import secure_filename
 import logging
 import statsd
 from datetime import datetime, timedelta
+from boto3.dynamodb.conditions import Key
 
 
 dynamodb_client = resource(
@@ -177,28 +178,6 @@ class CreateUser(Resource):
         except:
             return "Bad request", status.HTTP_400_BAD_REQUEST
 
-class EmailVerification(Resource):
-    def get(self):
-        email1=request.args.get('email')
-        logging.info(email1)
-        token1=request.args.get('token')
-        logging.info(token1)
-        logging.info('Verifying the user')
-        table = dynamodb_client.Table('csye-6225')
-        response = table.query(
-                KeyConditionExpression=Key('Email').eq(email1))
-        logging.info(response)
-        #result = User.query.get(username)
-        #session.query(MyClass).filter(MyClass.name == 'some name')
-        result = New_Student.query.filter_by(username=email1)
-        logging.info("user found")
-        logging.info(result)
-        if(result):
-            result.email_verified=True
-            db.session.commit()
-            return {"message":"Verification done"}
-        else:
-            return {'message':'something wrong with query'}
 
 
 @auth.verify_password
@@ -224,6 +203,8 @@ class GetandPut(Resource):
     def get(self, id):
         logging.info('get a specific user')
         c.incr('endpoint.getspecificuser')
+        if ((auth.current_user()['isVerified']) == False):
+            return {"message": "Verification Not Completed"}, 403
         if (str(auth.current_user()['id']) != id):
 
             return {"message": "Not authorized"}, 403
@@ -236,6 +217,8 @@ class GetandPut(Resource):
     def put(self, id):
         logging.info('updating a specific user information')
         c.incr('endpoint.updatespecificuser')
+        if ((auth.current_user()['isVerified']) == False):
+            return {"message": "Verification Not Completed"}, 403
         student_update = New_Student.query.get_or_404(id)
         data_update = request.get_json()
         required_keys = ['first_name', 'last_name', 'password']
@@ -293,6 +276,8 @@ class UploadDocument(Resource):
     def post(self):
         logging.info('uploading document')
         c.incr('endpoint.uploaddocument')
+        if ((auth.current_user()['isVerified']) == False):
+            return {"message": "Verification Not Completed"}, 403
         try:
             s3_bucket_name = db_creds.s3bucketname
             s3_path = "s3://"+db_creds.s3bucketname+"/"
@@ -319,6 +304,8 @@ class UploadDocument(Resource):
     def get(self):
         logging.info('gettting a document')
         c.incr('endpoint.getalldocs')
+        if ((auth.current_user()['isVerified']) == False):
+            return {"message": "Verification Not Completed"}, 403
         #document = Document.query.get_or_404(doc_id)
         # return document_schema.jsonify(document)
         #client = boto3.client("s3")
@@ -340,6 +327,8 @@ class GetDocument(Resource):
     def get(self, doc_id):
         logging.info('get a specific document')
         c.incr('endpoint.getdocument')
+        if ((auth.current_user()['isVerified']) == False):
+            return {"message": "Verification Not Completed"}, 403
         doc_details = Document.query.get(doc_id)
         if (doc_details and str(doc_details.user_id) != str(auth.current_user()['id'])):
 
@@ -359,6 +348,8 @@ class GetDocument(Resource):
     def delete(self, doc_id):
         logging.info('delete a specific document')
         c.incr('endpoint.deletedocument')
+        if ((auth.current_user()['isVerified']) == False):
+            return {"message": "Verification Not Completed"}, 403
         try:
             doc_details = Document.query.get(doc_id)
             if (doc_details and str(doc_details.user_id) != str(auth.current_user()['id'])):
@@ -405,17 +396,37 @@ class GetAllDocs(Resource):
 
         return jsonify(result_set)
 
-# class DeleteDocument(Resource):
-#     @auth.login_required
-#     def delete(self,doc_id):
-#         document_delete = Document.query.get_or_404(doc_id)
-#         name=document_delete.name
+class EmailVerification(Resource):
+    def get(self):
+        try:
+            email = request.args.get('email')
+            token = request.args.get('token')
+            logging.info('user verification through email')
+            try:
+                table = dynamodb_client.Table('csye-6225')
+                response_dynamo = table.query(KeyConditionExpression=Key('Email').eq(email))
+                logging.info(response_dynamo)
+                if (response_dynamo['Count'] == 1):
+                    if (response_dynamo['Items'][0]['TokenId'] == token and response_dynamo['Items'][0]['Email'] == email):
+                        if (datetime.now() < (datetime.strptime(response_dynamo['Items'][0]['TTL'], "%Y/%m/%d %H:%M:%S"))):
+                            result = New_Student.query.filter_by(username=email).first()
+                            if (result.email_verified==False):
+                                result.email_verified = True
+                                db.session.commit()
+                                return {"message": "Verification done."}
+                            else:
+                                return {"message": "User already verified "}, 400
 
-#         client = boto3.client("s3")
-#         client.delete_object(Bucket='csye6225larebkhans3-dev', Key=name)
-#         db.session.delete(document_delete)
-#         db.session.commit()
-#         return "Done"
+                        else:
+                            return {"message": "Token expired "}, 400
+                    else:
+                        return {"message": "Token and email do not match"}, 400
+                else:
+                    return {"message": "Invalid link"}, 400
+            except:
+                return {"message": "Unable to access Dynamo DB"}
+        except:
+            return {"message": "Bad Request"}, 400
 
 
 api.add_resource(CreateUser, '/v1/account/')
