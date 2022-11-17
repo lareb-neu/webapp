@@ -168,7 +168,7 @@ class CreateUser(Resource):
             sns_object = boto3.client('sns', region_name=db_creds.aws_region)
             response = sns_object.publish(
             TopicArn=db_creds.topic_arn,
-            Message=json.dumps({'custom_message': json.dumps(message)}),
+            Message=json.dumps({'default': json.dumps(message)}),
             MessageStructure='json'
             )
         
