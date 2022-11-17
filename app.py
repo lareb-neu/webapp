@@ -22,17 +22,12 @@ import db_creds
 from werkzeug.utils import secure_filename
 import logging
 import statsd
-from datetime import datetime
+from datetime import datetime, timedelta
 
-AWS_ACCESS_KEY = awsconfig.AWS_ACCESS_KEY
-AWS_SECRET_KEY = awsconfig.AWS_SECRET_KEY
-AWS_REGION = awsconfig.AWS_REGION
 
 dynamodb_client = resource(
     'dynamodb',
-    aws_access_key_id=AWS_ACCESS_KEY,
-    aws_secret_access_key=AWS_SECRET_KEY,
-    region_name=AWS_REGION
+    region_name=db_creds.aws_region
 )
 
 start = datetime.utcnow()
@@ -156,28 +151,54 @@ class CreateUser(Resource):
             db.session.commit()
             tablename = dynamodb_client.Table('csye-6225')
             tokenid = str(uuid.uuid4())
+            ttl=int(db_creds.TimeToLive)*60
             tablename.put_item(
                 Item={
                     'Email': username,
-                    'TokenName': tokenid
+                    'TokenName': tokenid,
+                    'TTL': (datetime.now()+timedelta(seconds=ttl)).strftime("%Y/%m/%d %H:%M:%S"),
+                    'MessageType': "user verification"
                 }
             )
-            logging.info('SNS service')
+            logging.info('service pushed to SNS')
             message = {"Username": username,
                        "Subject": tokenid,
+                       'MessageType': "user verification"
                        }
-            sns_object = boto3.client('sns', aws_access_key_id=AWS_ACCESS_KEY,
-                                      aws_secret_access_key=AWS_SECRET_KEY,
-                                      region_name=AWS_REGION)
+            sns_object = boto3.client('sns', region_name=db_creds.aws_region)
             response = sns_object.publish(
-                TopicArn='arn:aws:sns:us-east-1:620068443483:verify_email',
-                Message=json.dumps({'default': json.dumps(message)}),
-                MessageStructure='json'
+            TopicArn=db_creds.topic_arn,
+            Message=json.dumps({'custom_message': json.dumps(message)}),
+            MessageStructure='json'
             )
+        
 
             return make_response(student_schema.jsonify(new_student), 201)
         except:
             return "Bad request", status.HTTP_400_BAD_REQUEST
+
+class EmailVerification(Resource):
+    def get(self):
+        email1=request.args.get('email')
+        logging.info(email1)
+        token1=request.args.get('token')
+        logging.info(token1)
+        logging.info('Verifying the user')
+        table = dynamodb_client.Table('csye-6225')
+        response = table.query(
+                KeyConditionExpression=Key('Email').eq(email1))
+        logging.info(response)
+        #result = User.query.get(username)
+        #session.query(MyClass).filter(MyClass.name == 'some name')
+        result = New_Student.query.filter_by(username=email1)
+        logging.info("user found")
+        logging.info(result)
+        if(result):
+            result.email_verified=True
+            db.session.commit()
+            return {"message":"Verification done"}
+        else:
+            return {'message':'something wrong with query'}
 
 
 @auth.verify_password
@@ -405,6 +426,7 @@ api.add_resource(UploadDocument, '/v1/documents')
 api.add_resource(GetAllDocs, '/v1/alldocuments')
 api.add_resource(GetDocument, '/v1/documents/<string:doc_id>')
 api.add_resource(DocTest, '/test')
+api.add_resource(EmailVerification, '/v1/verify')
 #api.add_resource(DeleteDocument, '/v1/documents/<string:doc_id>')
 
 if __name__ == "__main__":
