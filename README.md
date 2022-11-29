@@ -62,3 +62,4 @@ uploading to create AMi
 
 -----------
 assignment9
+started launch template
