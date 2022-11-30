@@ -10,7 +10,9 @@ variable "ssh_username" {
 
 variable "subnet_id" {
   type    = string
-  default = "subnet-0566e4a45f140fcbf"
+  #default = "subnet-0566e4a45f140fcbf"
+  default = "subnet-07821efa79f9f961e"
+
 }
 
 variable "aws_region" {
