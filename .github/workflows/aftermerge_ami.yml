@@ -11,9 +11,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    env:
-        AWS_ACCESS_KEY: ${{secrets.DEMO_AWS_ACCESS_KEY}}
-        AWS_SECRET_KEY: ${{secrets.DEMO_AWS_SECRET_KEY}}
+    # env:
+    #     AWS_ACCESS_KEY: ${{secrets.DEMO_AWS_ACCESS_KEY}}
+    #     AWS_SECRET_KEY: ${{secrets.DEMO_AWS_SECRET_KEY}}
       
     steps:
     - uses: actions/checkout@v3
@@ -25,8 +25,8 @@ jobs:
     - name: Configuring AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.DEMO_AWS_ACCESS_KEY }}
-        aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_KEY }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
         aws-region: us-east-1
 
     - name: Ckecking the status
@@ -35,7 +35,18 @@ jobs:
     - name: Build Tempelates
       working-directory: ${{github.workspace}}
       run: zip -r webapp.zip ./* && 
-           packer build ami.pkr.hcl && echo "AMI_ID=$(jq -r '.builds[-1].artifact_id' output.json | cut -d ":" -f2)" >> $GITHUB_ENV &&
+           packer build ami.pkr.hcl
+
+    - name: Configuring AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.DEMO_AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_KEY }}
+        aws-region: us-east-1
+
+    - name: Build Tempelates
+      working-directory: ${{github.workspace}}
+      run: echo "AMI_ID=$(jq -r '.builds[-1].artifact_id' output.json | cut -d ":" -f2)" >> $GITHUB_ENV &&
            amiID=`cat manifest.json | jq '.builds[0].artifact_id' | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH-1) }'` &&
            echo {\"ImageId\":\"$amiId\"} | tee amiconfig.js && aws ec2 create-launch-template-version --launch-template-name vpcdemolambda-launch-template --source-version 1 --launch-template-data "ImageId=$amiID" &&
            aws autoscaling update-auto-scaling-group --auto-scaling-group-name vpcdemolambda-asg --launch-template LaunchTemplateName=vpcdemolambda-launch-template,Version='$Latest' &&
