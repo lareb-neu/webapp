@@ -52,8 +52,6 @@ jobs:
     #     command: validate
     #     arguments: -syntax-only
     #     target: ami.pkr.hcl
-    
-
     # - name: Creating and building the template through github
     #   working-directory: ${{github.workspace}}
     #   run: zip -r webapp.zip ./* && packer build ami.pkr.hcl
