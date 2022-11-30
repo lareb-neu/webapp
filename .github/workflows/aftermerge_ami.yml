@@ -8,6 +8,9 @@ jobs:
   packer_build:
 #this ami packer file will run on ubuntu latest and will create the AMI
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     env:
         AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
         AWS_SECRET_KEY: ${{secrets.AWS_SECRET_KEY}}
@@ -18,15 +21,39 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: 3.9
-#the workflow will validate and build the ami through the below code
-    - name: Checking the validation through template
-      uses: hashicorp/packer-github-actions@master
+
+    - name: Configuring AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
       with:
-        command: validate
-        arguments: -syntax-only
-        target: ami.pkr.hcl
+        aws-access-key-id: ${{ secrets.DEMO_AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_KEY }}
+        role-to-assume: arn:aws:iam::620068443483:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling
+        aws-region: us-east-1
+
+    - name: Ckecking the status
+      run: |
+        aws --version
+    - name: Build Tempelates
+      working-directory: ${{github.workspace}}
+      run: zip -r webapp.zip ./* && 
+           packer build ami.pkr.hcl && 
+           amiID=`cat manifest.json | jq '.builds[0].artifact_id' | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH-1) }'` &&
+           echo {\"ImageId\":\"$amiId\"} | tee amiconfig.js 
+
+    - name:  aws_instance_refresh
+      run: aws ec2 create-launch-template-version --launch-template-name vpcdemoloadbalance-launch-template --source-version 1 --launch-template-data "ImageId=$amiID" &&
+           aws autoscaling update-auto-scaling-group --auto-scaling-group-name vpcdemoloadbalance-asg --launch-template LaunchTemplateName=vpcdemoloadbalance-launch-template,Version='$Latest' &&
+           aws autoscaling start-instance-refresh --auto-scaling-group-name vpcdemoloadbalance-asg
+
+#the workflow will validate and build the ami through the below code
+    # - name: Checking the validation through template
+    #   uses: hashicorp/packer-github-actions@master
+    #   with:
+    #     command: validate
+    #     arguments: -syntax-only
+    #     target: ami.pkr.hcl
     
 
-    - name: Creating and building the template through github
-      working-directory: ${{github.workspace}}
-      run: zip -r webapp.zip ./* && packer build ami.pkr.hcl
+    # - name: Creating and building the template through github
+    #   working-directory: ${{github.workspace}}
+    #   run: zip -r webapp.zip ./* && packer build ami.pkr.hcl
