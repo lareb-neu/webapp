@@ -27,6 +27,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.DEMO_AWS_ACCESS_KEY }}
         aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_KEY }}
+        role-skip-session-tagging: true
         role-to-assume: arn:aws:iam::620068443483:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling
         aws-region: us-east-1
 
