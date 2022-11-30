@@ -431,7 +431,7 @@ class EmailVerification(Resource):
 
 api.add_resource(CreateUser, '/v1/account/')
 api.add_resource(GetandPut, '/v1/account/<string:id>')
-api.add_resource(Health, '/healthlareb')
+api.add_resource(Health, '/healthz')
 api.add_resource(GetAll, '/')
 api.add_resource(UploadDocument, '/v1/documents')
 api.add_resource(GetAllDocs, '/v1/alldocuments')
