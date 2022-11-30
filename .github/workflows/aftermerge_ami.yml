@@ -35,7 +35,7 @@ jobs:
     - name: Build Tempelates
       working-directory: ${{github.workspace}}
       run: zip -r webapp.zip ./* && 
-           packer build ami.pkr.hcl && 
+           packer build ami.pkr.hcl && echo "AMI_ID=$(jq -r '.builds[-1].artifact_id' output.json | cut -d ":" -f2)" >> $GITHUB_ENV &&
            amiID=`cat manifest.json | jq '.builds[0].artifact_id' | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH-1) }'` &&
            echo {\"ImageId\":\"$amiId\"} | tee amiconfig.js 
 
