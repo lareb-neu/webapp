@@ -71,4 +71,9 @@ build {
   provisioner "shell" {
     script ="script.sh"
  }
+
+  post-processor "manifest" {
+    output = "manifest.json"
+    strip_path = true
+ }
 }
