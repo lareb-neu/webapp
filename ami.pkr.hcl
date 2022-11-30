@@ -1,6 +1,6 @@
 variable "source_ami" {
   type    = string
-  default = "ami-08c40ec9ead489470" 
+  #default = "ami-08c40ec9ead489470" 
 }
 
 variable "ssh_username" {
@@ -10,7 +10,7 @@ variable "ssh_username" {
 
 variable "subnet_id" {
   type    = string
-  default = "subnet-07821efa79f9f961e"
+  #default = "subnet-07821efa79f9f961e"
 }
 
 variable "aws_region" {
