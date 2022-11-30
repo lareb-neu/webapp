@@ -11,9 +11,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    # env:
-    #     AWS_ACCESS_KEY: ${{secrets.DEMO_AWS_ACCESS_KEY}}
-    #     AWS_SECRET_KEY: ${{secrets.DEMO_AWS_SECRET_KEY}}
+    env:
+        AWS_ACCESS_KEY: ${{secrets.DEMO_AWS_ACCESS_KEY}}
+        AWS_SECRET_KEY: ${{secrets.DEMO_AWS_SECRET_KEY}}
       
     steps:
     - uses: actions/checkout@v3
@@ -22,35 +22,35 @@ jobs:
       with:
         python-version: 3.9
 
-    - name: Configuring AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-        aws-region: us-east-1
+    # - name: Configuring AWS Credentials
+    #   uses: aws-actions/configure-aws-credentials@v1
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+    #     aws-region: us-east-1
 
-    - name: Ckecking the status
-      run: |
-        aws --version
-    - name: Build Tempelates
-      working-directory: ${{github.workspace}}
-      run: zip -r webapp.zip ./* && 
-           packer build ami.pkr.hcl
+    # - name: Ckecking the status
+    #   run: |
+    #     aws --version
+    # - name: Build Tempelates
+    #   working-directory: ${{github.workspace}}
+    #   run: zip -r webapp.zip ./* && 
+    #        packer build ami.pkr.hcl
 
-    - name: Configuring AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.DEMO_AWS_ACCESS_KEY }}
-        aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_KEY }}
-        aws-region: us-east-1
+    # - name: Configuring AWS Credentials
+    #   uses: aws-actions/configure-aws-credentials@v1
+    #   with:
+    #     aws-access-key-id: ${{ secrets.DEMO_AWS_ACCESS_KEY }}
+    #     aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_KEY }}
+    #     aws-region: us-east-1
 
-    - name: Build Tempelates
-      working-directory: ${{github.workspace}}
-      run: echo "AMI_ID=$(jq -r '.builds[-1].artifact_id' output.json | cut -d ":" -f2)" >> $GITHUB_ENV &&
-           amiID=`cat manifest.json | jq '.builds[0].artifact_id' | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH-1) }'` &&
-           echo {\"ImageId\":\"$amiId\"} | tee amiconfig.js && aws ec2 create-launch-template-version --launch-template-name vpcdemolambda-launch-template --source-version 1 --launch-template-data "ImageId=$amiID" &&
-           aws autoscaling update-auto-scaling-group --auto-scaling-group-name vpcdemolambda-asg --launch-template LaunchTemplateName=vpcdemolambda-launch-template,Version='$Latest' &&
-           aws autoscaling start-instance-refresh --auto-scaling-group-name vpcdemolambda-asg
+    # - name: Build Tempelates
+    #   working-directory: ${{github.workspace}}
+    #   run: echo "AMI_ID=$(jq -r '.builds[-1].artifact_id' output.json | cut -d ":" -f2)" >> $GITHUB_ENV &&
+    #        amiID=`cat manifest.json | jq '.builds[0].artifact_id' | awk 'match($0, /ami-.*/) { print substr($0, RSTART, RLENGTH-1) }'` &&
+    #        echo {\"ImageId\":\"$amiId\"} | tee amiconfig.js && aws ec2 create-launch-template-version --launch-template-name vpcdemolambda-launch-template --source-version 1 --launch-template-data "ImageId=$amiID" &&
+    #        aws autoscaling update-auto-scaling-group --auto-scaling-group-name vpcdemolambda-asg --launch-template LaunchTemplateName=vpcdemolambda-launch-template,Version='$Latest' &&
+    #        aws autoscaling start-instance-refresh --auto-scaling-group-name vpcdemolambda-asg
 
     # - name:  aws_instance_refresh
     #   run: aws ec2 create-launch-template-version --launch-template-name vpcdemolambda-launch-template --source-version 1 --launch-template-data "ImageId=$amiID" &&
@@ -58,12 +58,12 @@ jobs:
     #        aws autoscaling start-instance-refresh --auto-scaling-group-name vpcdemolambda-asg
 
 #the workflow will validate and build the ami through the below code
-    # - name: Checking the validation through template
-    #   uses: hashicorp/packer-github-actions@master
-    #   with:
-    #     command: validate
-    #     arguments: -syntax-only
-    #     target: ami.pkr.hcl
-    # - name: Creating and building the template through github
-    #   working-directory: ${{github.workspace}}
-    #   run: zip -r webapp.zip ./* && packer build ami.pkr.hcl
+    - name: Checking the validation through template
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: validate
+        arguments: -syntax-only
+        target: ami.pkr.hcl
+    - name: Creating and building the template through github
+      working-directory: ${{github.workspace}}
+      run: zip -r webapp.zip ./* && packer build ami.pkr.hcl
