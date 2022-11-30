@@ -12,8 +12,8 @@ jobs:
       id-token: write
       contents: read
     env:
-        AWS_ACCESS_KEY: ${{secrets.DEMO_AWS_ACCESS_KEY}}
-        AWS_SECRET_KEY: ${{secrets.DEMO_AWS_SECRET_KEY}}
+        AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
+        AWS_SECRET_KEY: ${{secrets.AWS_SECRET_KEY}}
       
     steps:
     - uses: actions/checkout@v3
