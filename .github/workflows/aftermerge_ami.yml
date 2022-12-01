@@ -51,8 +51,5 @@ jobs:
            aws autoscaling update-auto-scaling-group --auto-scaling-group-name vpcdemolambda-asg --launch-template LaunchTemplateName=vpcdemolambda-launch-template,Version='$Latest' &&
            aws autoscaling start-instance-refresh --auto-scaling-group-name vpcdemolambda-asg
 
-    - name:  aws_instance_refresh
-      run: aws ec2 create-launch-template-version --launch-template-name vpcdemolambda-launch-template --source-version 1 --launch-template-data "ImageId=$amiId" &&
-           aws autoscaling update-auto-scaling-group --auto-scaling-group-name vpcdemolambda-asg --launch-template LaunchTemplateName=vpcdemolambda-launch-template,Version='$Latest' &&
-           aws autoscaling start-instance-refresh --auto-scaling-group-name vpcdemolambda-asg
+    
 
